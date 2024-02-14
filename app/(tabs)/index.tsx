@@ -2,13 +2,19 @@ import { StyleSheet } from 'react-native';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
+import { useContext } from 'react';
+import { StorageContext } from '@/contexts/StorageContext';
 
 export default function TabOneScreen() {
+  const { endpoint, username } = useContext(StorageContext);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab One</Text>
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+
+      <Text>Endpoint: {endpoint}</Text>
+      <Text>Username: {username}</Text>
     </View>
   );
 }
