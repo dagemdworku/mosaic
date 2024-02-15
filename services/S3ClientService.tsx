@@ -26,6 +26,22 @@ class S3ClientService {
         });
     };
 
+    listVideosInBucket = async (bucketName: string): Promise<S3.ObjectList> => {
+        return new Promise((resolve, reject) => {
+            const params = {
+                Bucket: bucketName,
+            };
+
+            this.s3.listObjectsV2(params, (err, data) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data?.Contents ?? []);
+                }
+            });
+        });
+    };
+
     verify = async (): Promise<boolean> => {
         try {
             await this.listBuckets();
