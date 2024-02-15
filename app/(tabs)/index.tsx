@@ -1,4 +1,4 @@
-import { Button, ScrollView, StyleSheet } from 'react-native';
+import { Button, Dimensions, FlatList, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useContext, useRef, useState } from 'react';
@@ -6,17 +6,16 @@ import { StorageContext } from '@/contexts/StorageContext';
 import S3ClientService from '@/services/S3ClientService';
 import { ObjectList } from 'aws-sdk/clients/s3';
 
-import { ResizeMode } from 'expo-av';
-import VideoPlayer from 'expo-video-player'
-import { SliderProps } from '@react-native-community/slider';
+import MVideoPlayer from '@/components/MVideoPlayer';
 
 export default function TabOneScreen() {
-
-  const videoRef = useRef(null);
-
   const { endpoint, username, password, connected, setConnected } = useContext(StorageContext);
   const [s3Client, setS3Client] = useState<S3ClientService | null>(null);
   const [videos, setVideos] = useState<ObjectList | null>(null);
+
+
+  const screenHeight = Dimensions.get('window').height;
+  const videoHeight = screenHeight * 0.8;
 
   const connect = async () => {
     if (!endpoint || !username || !password) {
@@ -61,69 +60,43 @@ export default function TabOneScreen() {
     }
   }
 
+  if (!connected ?? false) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Not connected!</Text>
 
+        <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
-  const slider: SliderProps = {
-    style: {
-      width: 300,
-      height: 40,
-    },
-    minimumValue: 0,
-    maximumValue: 1,
-    minimumTrackTintColor: '#000000',
-    maximumTrackTintColor: '#000000',
-    thumbTintColor: '#000000',
-  };
+        <View style={styles.table}>
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, styles.textRight]}>Endpoint:</Text>
+            <Text style={styles.tableCell}>{endpoint}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, styles.textRight]}>Username:</Text>
+            <Text style={styles.tableCell}>{username}</Text>
+          </View>
+        </View>
+
+        <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+
+        <Button title="Connect" onPress={connect} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-
-      <Text>Endpoint: {endpoint}</Text>
-      <Text>Username: {username}</Text>
-      <Text>Connected: {connected ? 'Yes' : 'No'}</Text>
-
-      <Button title="Connect" onPress={connect} />
-      <Button title="List Videos" onPress={listVideos} />
-
-      <Text>Videos:</Text>
-      <ScrollView>
-        {videos?.map((video, index) => (
-          <View
-            key={video.Key}>
-            <VideoPlayer
-              style={styles.video}
-              defaultControlsVisible={false}
-              timeVisible={false}
-              fullscreen={{
-                visible: false,
-              }}
-              slider={{
-                style: {
-                  marginLeft: 10,
-                  marginRight: 10,
-                },
-                visible: true,
-                minimumValue: 0,
-                maximumValue: 1,
-                minimumTrackTintColor: '#FFF',
-                maximumTrackTintColor: '#FFF5',
-                thumbTintColor: '#FFF',
-              }}
-              videoProps={{
-                shouldPlay: false,
-                resizeMode: ResizeMode.CONTAIN,
-                source: {
-                  uri: 'http://172.20.10.7:9000/videos/' + video.Key,
-                },
-              }}
-            />
-            <Text>http://172.20.10.7:9000/videos/{video.Key}</Text>
-          </View>
-        ))}
-
-      </ScrollView>
+      {(videos ?? []).length === 0 ? <Button title="List Videos" onPress={listVideos} /> : null}
+      <FlatList
+        data={videos}
+        renderItem={({ item: video }) => (
+          <MVideoPlayer videoKey={video.Key ?? ''} path={'http://172.20.10.7:9000/videos/' + video.Key} />
+        )}
+        keyExtractor={(video) => video.Key ?? ''}
+        snapToInterval={videoHeight}
+        decelerationRate={'fast'}
+      />
     </View>
   );
 }
@@ -134,6 +107,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  table: {
+    width: '80%',
+    borderWidth: 0,
+  },
+  tableRow: {
+    flexDirection: 'row',
+  },
+  tableCell: {
+    flex: 1,
+    borderWidth: 0,
+    padding: 10,
+  },
+  textRight: {
+    textAlign: 'right',
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -142,9 +130,5 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     height: 1,
     width: '80%',
-  },
-  video: {
-    width: 300,
-    height: 300,
   },
 });
