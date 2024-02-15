@@ -1,13 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet, TextInput, KeyboardAvoidingView, Button, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, TextInput, KeyboardAvoidingView, TouchableOpacity, useColorScheme } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useContext, useState } from 'react';
 import { StorageContext } from '@/contexts/StorageContext';
 import { useNavigation } from 'expo-router';
+import S3ClientService from '@/services/S3ClientService';
 
 export default function CredentialsScreen() {
-  const { endpoint: initialEndpoint, username: initialUsername, setCredentials } = useContext(StorageContext);
+  const { endpoint: initialEndpoint, username: initialUsername, setCredentials, setConnected } = useContext(StorageContext);
 
   const [endpoint, setEndpoint] = useState(initialEndpoint ?? '');
   const [username, setUsername] = useState(initialUsername ?? '');
@@ -15,10 +16,17 @@ export default function CredentialsScreen() {
 
 
   const navigation = useNavigation();
+  const colorScheme = useColorScheme();
 
-  const saveCredentials = () => {
-    if (setCredentials) {
-      setCredentials(endpoint, username, password);
+  const saveCredentials = async () => {
+    const s3Client = new S3ClientService(endpoint, username, password);
+    const verified: boolean = await s3Client.verify();
+
+    if (!verified) {
+      alert('Invalid credentials');
+    } else {
+      setCredentials!(endpoint, username, password);
+      setConnected!(true);
       navigation.goBack();
     }
   };
@@ -29,7 +37,7 @@ export default function CredentialsScreen() {
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
         placeholder="Endpoint"
         value={endpoint}
         onChangeText={setEndpoint}
@@ -37,7 +45,7 @@ export default function CredentialsScreen() {
       />
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
         placeholder="Username"
         value={username}
         onChangeText={setUsername}
@@ -45,7 +53,7 @@ export default function CredentialsScreen() {
       />
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
         placeholder="Password"
         secureTextEntry
         value={password}
@@ -55,7 +63,7 @@ export default function CredentialsScreen() {
 
 
       <TouchableOpacity style={styles.button} onPress={saveCredentials}>
-        <Text style={styles.buttonText}>Save</Text>
+        <Text style={styles.buttonText}>Connect</Text>
       </TouchableOpacity>
 
       {/* Use a light status bar on iOS to account for the black space above the modal */}
@@ -69,7 +77,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
   },
   title: {
     fontSize: 20,
