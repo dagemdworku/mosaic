@@ -1,12 +1,28 @@
-import { StyleSheet } from 'react-native';
+import { Button, StyleSheet } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 import { useContext } from 'react';
 import { StorageContext } from '@/contexts/StorageContext';
+import S3ClientService from '@/services/S3ClientService';
 
 export default function TabOneScreen() {
-  const { endpoint, username } = useContext(StorageContext);
+  const { endpoint, username, password, connected, setConnected } = useContext(StorageContext);
+
+  const connect = async () => {
+    if (!endpoint || !username || !password) {
+      alert('Please set credentials first');
+      return;
+    }
+
+    const s3Client = new S3ClientService(endpoint, username, password);
+    const verified: boolean = await s3Client.verify();
+
+    if (!verified) {
+      alert('Invalid credentials');
+    } else {
+      setConnected!(true);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -15,6 +31,9 @@ export default function TabOneScreen() {
 
       <Text>Endpoint: {endpoint}</Text>
       <Text>Username: {username}</Text>
+      <Text>Connected: {connected ? 'Yes' : 'No'}</Text>
+
+      <Button title="Connect" onPress={connect} />
     </View>
   );
 }
