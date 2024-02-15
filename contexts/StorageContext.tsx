@@ -14,6 +14,8 @@ interface StorageContextProps {
 export const StorageContext = createContext<Partial<StorageContextProps>>({});
 
 export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    console.log('Default Endpoint', process.env.DEFAULT_ENDPOINT);
+
     const [endpoint, setEndpoint] = useState(process.env.DEFAULT_ENDPOINT ?? '');
     const [username, setUsername] = useState(process.env.DEFAULT_USERNAME ?? '');
     const [password, setPassword] = useState(process.env.DEFAULT_PASSWORD ?? '');
