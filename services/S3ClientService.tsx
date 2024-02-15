@@ -51,6 +51,34 @@ class S3ClientService {
         }
     };
 
+    uploadVideo = async (bucketName: string, uri: string, onProgress: (progress: number) => void) => {
+        let name = uri.split("/").pop();
+        if (name === undefined) throw new Error("Key is undefined.");
+
+        const blob = await fetch(uri).then((r) => r.blob());
+
+        const params: S3.PutObjectRequest = {
+            Bucket: bucketName,
+            Key: name,
+            Body: blob,
+        };
+
+        const options = {
+            partSize: 5 * 1024 * 1024,
+            queueSize: 1,
+        };
+
+        const upload = this.s3.upload(params, options);
+
+        upload.on('httpUploadProgress', (progress) => {
+            alert('progress');
+            const percent = Math.round((progress.loaded / progress.total) * 100);
+            onProgress(percent);
+        });
+
+        return upload.promise();
+    };
+
 }
 
 export default S3ClientService;
