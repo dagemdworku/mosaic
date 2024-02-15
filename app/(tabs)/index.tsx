@@ -1,12 +1,19 @@
-import { Button, StyleSheet } from 'react-native';
+import { Button, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { StorageContext } from '@/contexts/StorageContext';
 import S3ClientService from '@/services/S3ClientService';
 import { ObjectList } from 'aws-sdk/clients/s3';
 
+import { ResizeMode } from 'expo-av';
+import VideoPlayer from 'expo-video-player'
+import { SliderProps } from '@react-native-community/slider';
+
 export default function TabOneScreen() {
+
+  const videoRef = useRef(null);
+
   const { endpoint, username, password, connected, setConnected } = useContext(StorageContext);
   const [s3Client, setS3Client] = useState<S3ClientService | null>(null);
   const [videos, setVideos] = useState<ObjectList | null>(null);
@@ -54,6 +61,20 @@ export default function TabOneScreen() {
     }
   }
 
+
+
+  const slider: SliderProps = {
+    style: {
+      width: 300,
+      height: 40,
+    },
+    minimumValue: 0,
+    maximumValue: 1,
+    minimumTrackTintColor: '#000000',
+    maximumTrackTintColor: '#000000',
+    thumbTintColor: '#000000',
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab One</Text>
@@ -67,9 +88,42 @@ export default function TabOneScreen() {
       <Button title="List Videos" onPress={listVideos} />
 
       <Text>Videos:</Text>
-      {videos?.map((video, index) => (
-        <Text key={index}>{video.Key}</Text>
-      ))}
+      <ScrollView>
+        {videos?.map((video, index) => (
+          <View
+            key={video.Key}>
+            <VideoPlayer
+              style={styles.video}
+              defaultControlsVisible={false}
+              timeVisible={false}
+              fullscreen={{
+                visible: false,
+              }}
+              slider={{
+                style: {
+                  marginLeft: 10,
+                  marginRight: 10,
+                },
+                visible: true,
+                minimumValue: 0,
+                maximumValue: 1,
+                minimumTrackTintColor: '#FFF',
+                maximumTrackTintColor: '#FFF5',
+                thumbTintColor: '#FFF',
+              }}
+              videoProps={{
+                shouldPlay: false,
+                resizeMode: ResizeMode.CONTAIN,
+                source: {
+                  uri: 'http://172.20.10.7:9000/videos/' + video.Key,
+                },
+              }}
+            />
+            <Text>http://172.20.10.7:9000/videos/{video.Key}</Text>
+          </View>
+        ))}
+
+      </ScrollView>
     </View>
   );
 }
@@ -88,5 +142,9 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     height: 1,
     width: '80%',
+  },
+  video: {
+    width: 300,
+    height: 300,
   },
 });
